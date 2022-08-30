@@ -1,4 +1,6 @@
+click
 flask
-jsmin
-pymysql
-types-PyMySQL
+flask-bcrypt
+flask-login
+flask-wtf
+gunicorn

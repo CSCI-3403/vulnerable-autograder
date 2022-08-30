@@ -20,7 +20,7 @@ from wtforms.validators import DataRequired # type: ignore
 from lib.models import Assignment, Submission, db, init_database, Student
 from lib.vuln_db import VulnDB
 
-GRADING_TEMPLATE = Path("src", "lib", "template.py").read_text()
+GRADING_TEMPLATE = Path("lib", "template.py").read_text()
 View = Union[Response, str, Tuple[str, int]]
 assignment_cache: List[Assignment] = []
 

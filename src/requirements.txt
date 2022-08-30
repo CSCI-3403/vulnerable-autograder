@@ -1,5 +1,0 @@
-click
-flask
-flask-bcrypt
-flask-login
-flask-wtforms
