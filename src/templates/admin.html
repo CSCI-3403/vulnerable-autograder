@@ -6,6 +6,7 @@
     <tr>
       <th><abbr title="Student">Student</abbr></th>
       <th><abbr title="Submissions">Submissions</abbr></th>
+      <th><abbr title="Grade">Grade</abbr></th>
     </tr>
   </thead>
   <tbody>
@@ -15,6 +16,11 @@
         <a href="admin/{{ student.username }}">{{ student.username }}</a>
       </td>  
       <td>{{ student.submissions|length }}</td>
+      {% if student.submissions %}
+      <td>{{ student.submissions[-1].grade }}</td>
+      {% else %}
+      <td>None</td>
+      {% endif %}
     {% endfor %}
   </tbody>
 </table>

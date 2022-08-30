@@ -21,7 +21,7 @@ from lib.models import Assignment, Submission, db, init_database, Student
 from lib.vuln_db import VulnDB
 
 GRADING_TEMPLATE = Path("lib", "template.py").read_text()
-VALID_USERS = Path("secrets", "secret_key.txt").read_text()
+VALID_USERS_FILE = Path("secrets", "valid_users.txt")
 View = Union[Response, str, Tuple[str, int]]
 
 # Init logging
@@ -132,22 +132,33 @@ def assignment(assignment_id: int):
 @login_required
 def submit(assignment_id: int):
     code = request.data.decode()
-    db.session.add(Submission(assignment_id=assignment_id, student_id=current_user.username, code=code))
+
+    try:
+        grading_script = GRADING_TEMPLATE.format(
+            student_code=code,
+            student=current_user.username,
+            assignment=assignment_id)
+
+        script_path = Path(app.config["student_root"], current_user.username, "grading_script.py")
+        script_path.write_text(grading_script)
+
+        output, error = run_as_user(script_path, current_user.username)
+
+        vuln_db = get_insecure_db(current_user.username)
+
+        score = vuln_db.read_grade(assignment_id)
+
+        all_grades = vuln_db.read_grades()
+        average_grade = sum(all_grades.values()) / len(all_grades)
+    except:
+        log.exception("Error while grading")
+        output = ''
+        error = 'Server error: Please tell the teaching team about this'
+        score = 0
+        average_grade = 0
+
+    db.session.add(Submission(assignment_id=assignment_id, student_id=current_user.username, code=code, grade=average_grade))
     db.session.commit()
-
-    grading_script = GRADING_TEMPLATE.format(
-        student_code=code,
-        student=current_user.username,
-        assignment=assignment_id)
-
-    script_path = Path(app.config["student_root"], current_user.username, "grading_script.py")
-    script_path.write_text(grading_script)
-
-    output, error = run_as_user(script_path, current_user.username)
-
-    # script_path.unlink(missing_ok=True)
-
-    score = get_insecure_db(current_user.username).read_grade(assignment_id)
 
     return jsonify({
         "output": output,
@@ -172,18 +183,17 @@ def login():
     if form.validate_on_submit():
         username = form.username.data
         pw = form.password.data
-        log.info(f"{username}: {form.submit.data}, {form.create.data}")
 
         student = db.session.query(Student).filter(Student.username == username).first()
 
-        if username not in VALID_USERS:
-            log.info(f"Invalid username: {username}")
+        if username not in VALID_USERS_FILE.read_text().split():
+            log.info(f"Not in user allowlist: '{username}'")
             form.username.errors.append("Invalid username (please use your identikey)")
         elif form.create.data:
             if not student:
                 hashed_pw = bcrypt.generate_password_hash(pw)
 
-                student = Student(username=username, hashed_pw=hashed_pw)
+                student = Student(username=username, hashed_pw=hashed_pw, grade=0)
                 db.session.add(student)
                 db.session.commit()
 

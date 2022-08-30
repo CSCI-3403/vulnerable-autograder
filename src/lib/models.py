@@ -16,7 +16,7 @@ class Submission(db.Model): # type: ignore
     assignment_id: int = db.Column(Integer, ForeignKey('assignments.id'), nullable=False)
     student_id: str = db.Column(Text, ForeignKey('students.username'), nullable=False)
     code: str = db.Column(Text, nullable=False)
-    # grade: int = db.Column(Integer, nullable=False)
+    grade: int = db.Column(Integer, nullable=False)
     time: datetime = db.Column(DateTime, server_default=func.now(), nullable=False)
 
 @dataclass
@@ -25,6 +25,7 @@ class Student(db.Model, UserMixin): # type: ignore
 
     username: str = db.Column(Text, primary_key=True, nullable=False)
     hashed_pw: str = db.Column(Text, nullable=False)
+    grade: int = db.Column(Integer, nullable=False)
     submissions: relationship = relationship(Submission)
 
     def get_id(self):
@@ -47,6 +48,7 @@ def init_database() -> None:
     db.session.merge(Student(
         username='debug',
         hashed_pw='',
+        grade=0,
     ))
     db.session.merge(Assignment(
         id=1,

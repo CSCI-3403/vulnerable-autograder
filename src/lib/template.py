@@ -23,16 +23,21 @@ def update_grade(percent: float, assignment: int):
 def main():
     num_correct = 0
 
-    for input, expected_output in test_cases:
-        student_output = find_max(input)
-        if student_output == expected_output:
-            print("[*] Test passed for input {{}}".format(input))
-            num_correct += 1
-        else:
-            print("[!] Test failed for input {{}}: Expected {{}}, got {{}}".format(
-                input,
-                expected_output,
-                student_output))
+    for test_input, expected_output in test_cases:
+        try:
+            student_output = find_max(test_input)
+
+            if student_output == expected_output:
+                print("[*] Test passed for input {{}}".format(test_input))
+                num_correct += 1
+            else:
+                print("[!] Test failed for input {{}}: Expected {{}}, got {{}}".format(
+                    test_input,
+                    expected_output,
+                    student_output))
+
+        except Exception as e:
+            print("[!] Got exception for input {{}}: {{}}".format(test_input, e))
     
     percent = num_correct / len(test_cases) * 100
     update_grade(percent, {assignment})
