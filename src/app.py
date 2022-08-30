@@ -21,15 +21,15 @@ from lib.models import Assignment, Submission, db, init_database, Student
 from lib.vuln_db import VulnDB
 
 GRADING_TEMPLATE = Path("lib", "template.py").read_text()
+VALID_USERS = Path("secrets", "secret_key.txt").read_text()
 View = Union[Response, str, Tuple[str, int]]
 
 # Init logging
 log = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-
 app = Flask(__name__)
-app.secret_key = "test"
+app.secret_key = Path("secrets", "secret_key.txt").read_text()
 
 bcrypt = Bcrypt(app)
 
@@ -63,18 +63,6 @@ def get_insecure_db(user: str):
 @lru_cache()
 def get_assignments():
     return db.session.query(Assignment).all()
-
-def init_user_account(user: str):
-    if os.name != "posix":
-        log.warning("Unable to sandbox user outside of a Posix system")
-        path = Path(app.config["student_root"], user)
-        path.mkdir(parents=True, exist_ok=True)
-        log.info(f"Created user directory at {path.resolve()}")
-    else:
-        log.info(f"Creating user: {user}")
-        os.system(f"sudo ./create_user.sh {user}")
-
-    get_insecure_db(user).init()
 
 def run_as_user(path: Path, user: str):
     if os.name != "posix":
@@ -176,19 +164,22 @@ class LoginForm(FlaskForm):
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if app.debug:
-        init_user_account("debug")
         login_user(Student(username="debug"))
         log.info("Automatically logging in as debug user")
         return redirect(url_for("index"))
-
+    
     form = LoginForm()
     if form.validate_on_submit():
         username = form.username.data
         pw = form.password.data
         log.info(f"{username}: {form.submit.data}, {form.create.data}")
+
         student = db.session.query(Student).filter(Student.username == username).first()
 
-        if form.create.data:
+        if username not in VALID_USERS:
+            log.info(f"Invalid username: {username}")
+            form.username.errors.append("Invalid username (please use your identikey)")
+        elif form.create.data:
             if not student:
                 hashed_pw = bcrypt.generate_password_hash(pw)
 
@@ -196,7 +187,6 @@ def login():
                 db.session.add(student)
                 db.session.commit()
 
-                init_user_account(username)
                 login_user(student)
                 log.info(f"User successfully created: {username}")
                 return redirect(url_for("index"))

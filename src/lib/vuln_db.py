@@ -4,13 +4,8 @@ import sqlite3
 
 class VulnDB:
     def __init__(self, path: Path, student: str):
-        # need_init = not path.isfile()
-
         self.student = student
         self.connection = sqlite3.connect(path)
-
-        # if need_init:
-        #    self.init()
 
     def init(self):
         cur = self.connection.cursor()
