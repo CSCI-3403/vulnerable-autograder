@@ -1,0 +1,13 @@
+{% macro link(path, text) -%}
+<a {{ 'class=is-active' if path == request.path else '' }} href="{{ path }}">{{ text }}</a>
+{%- endmacro %}
+
+<aside class="menu is-size-5">
+  <ul class="menu-list">
+      <li>{{ link("/", "Assignments") }}</li>
+      <li>{{ link("/grades", "Grades") }}</li>
+      {% if current_user.username == "admin" %}
+      <li>{{ link("/admin", "Admin") }}</li>
+      {% endif %}
+    </ul>
+  </aside>

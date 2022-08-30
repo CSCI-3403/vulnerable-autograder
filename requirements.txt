@@ -1,0 +1,4 @@
+flask
+jsmin
+pymysql
+types-PyMySQL

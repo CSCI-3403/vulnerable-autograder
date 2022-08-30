@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="columns is-mobile is-centered">
+    <div class="column is-half">
+        <form action="/login" method="POST">
+            {{ form.csrf_token }}
+            {% for error in form.csrf_token.errors %}
+                <p class="help is-danger">{{ error }}</p>
+            {% endfor %}
+
+            <div class="field">
+                <label class="label">{{ form.username.label }}</label>
+                <div class="control has-icons-left has-icons-right">
+                    {{ form.username(size=32, class="input is-danger" if form.username.errors else "input") }}
+                    <span class="icon is-small is-left">
+                        <i class="fas fa-user"></i>
+                    </span>
+                </div>
+                {% for error in form.username.errors %}
+                    <p class="help is-danger">{{ error }}</p>
+                {% endfor %}
+            </div>
+            
+            <div class="field">
+                <label class="label">{{ form.password.label }}</label>
+                <div class="control has-icons-left has-icons-right">
+                    {{ form.password(class="input is-danger" if form.password.errors else "input") }}
+                    <span class="icon is-small is-left">
+                        <i class="fas fa-lock"></i>
+                    </span>
+                </div>
+                {% for error in form.password.errors %}
+                    <p class="help is-danger">{{ error }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="field is-grouped">
+                <div class="control">
+                    {{ form.submit(class="button is-link") }}
+                </div>
+                <div class="control">
+                    {{ form.create(class="button") }}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block nav %}
+{% endblock %}

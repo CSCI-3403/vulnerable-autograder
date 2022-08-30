@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title is-3">{{ student.username }}</h1>
+<h2 class="title is-4">Average grade: {{ average }}</h2>
+
+<table class="table is-fullwidth">
+  <thead>
+    <tr>
+      <th><abbr title="Assignment">Assignment</abbr></th>
+      <th><abbr title="Grade">Grade</abbr></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for assignment, grade in grades.items() %}
+    <tr>
+      <td>Assignment {{ assignment }}</td>
+      <td>{{ grade }}</td>
+    {% endfor %}
+  </tbody>
+</table>
+
+<table class="table is-fullwidth">
+  <thead>
+    <tr>
+      <th><abbr title="Submissions">Submissions</abbr></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for submission in student.submissions %}
+    <tr>
+      <td>
+        <div class="card block">
+          <div class="card-header">
+            <p class="card-header-title">
+              {{ submission.time }}
+            </p>
+          </div>
+          <div class="card-content">
+            <div class="content">
+                <pre>{{ submission.code }}</pre>
+            </div>
+          </div>
+        </div>
+      </td>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table class="table is-fullwidth">
+  <thead>
+    <tr>
+      <th><abbr title="Student">Student</abbr></th>
+      <th><abbr title="Submissions">Submissions</abbr></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for student in students %}
+    <tr>
+      <td>
+        <a href="admin/{{ student.username }}">{{ student.username }}</a>
+      </td>  
+      <td>{{ student.submissions|length }}</td>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

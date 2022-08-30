@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="columns is-mobile is-centered">
+    <div class="column is-half">
+        <h1 class="title">Assignments</h1>
+        {% for assignment in assignments %}
+        {% set score = scores.get(assignment.id, 0) %}
+        {% set background = "success-light" if score >= 100 else "danger-light" %}
+        {% if not assignment.open %}
+        <div class="card block has-background-{{ background }}">
+        {% elif score >= 100 %}
+        <div class="card block has-background-success-light">
+        {% else %}
+        <div class="card block">
+        {% endif %}
+            <div class="media">
+                <div class="media-content p-2">
+                    <p class="title is-4">{{ assignment.title }}</p>
+                    <p class="subtitle is-6">100 points | Due {{ assignment.due }}</p>
+                </div>
+            </div>
+            <footer class="card-footer">
+                {% if assignment.open %}
+                <div class="card-footer-item">{{ score }} / 100 points</div>
+                <a href="/assignments/{{ assignment.id }}" class="card-footer-item">Start</a>
+                {% else %}
+                <div class="card-footer-item has-background-{{ background }}">{{ score }} / 100 points</div>
+                <a href="/assignments/{{ assignment.id }}" class="card-footer-item">View</a>
+                {% endif %}
+            </footer>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

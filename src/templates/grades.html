@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="columns is-mobile is-centered">
+  <div class="column is-half">
+    <table class="table is-fullwidth">
+      <thead>
+        <tr>
+          <th><abbr title="Assignment">Assignment</abbr></th>
+          <th><abbr title="Score">Score</abbr></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for assignment, score in scores.items() %}
+        {% if score < 100 %}
+        <tr class="has-background-danger-light">
+          {% else %}
+        <tr class="has-background-success-light">
+        {% endif %}
+          <th>Assignment #{{ assignment }}</th>
+          <th>{{ score }}%</th>
+        </tr>
+        {% endfor %}
+        <tr>
+          <th>Average</th>
+          <th>{{ average }}%</th>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

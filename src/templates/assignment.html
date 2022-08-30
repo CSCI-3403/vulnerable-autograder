@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block imports %}
+<script src="/static/js/ace.js" type="text/javascript" charset="utf-8"></script>
+{% endblock %}
+
+{% block content %}
+<div class="block">
+    <div class="title">
+        Assignment: {{ assignment.title }}
+    </div>
+</div>
+
+<div class="block p-4 {{ "has-background-primary-light" if assignment.open else "has-background-warning-light" }}">
+    <div class="block">
+        {{ assignment.description }}
+    </div>
+    <div class="block">
+        <div id="editor">{{ assignment.starting_code }}</div>
+    </div>
+    <div class="level">
+        {% if assignment.open %}
+            <button class="button is-fullwidth is-primary is-size-5" id="submit">Submit</button>
+        {% else %}
+        <button class="button is-fullwidth is-warning is-size-5" id="submit" disabled>Submit</button>
+        {% endif %}
+    </div>
+</div>
+
+{% if not assignment.open %}
+<div class="has-background-warning-light" id="output-container">
+    <div class="block p-4">
+        <article class="message block {{ "is-success" if score >= 100 else "is-danger" }}">
+            <div id="score" class="message-body">
+                {{ score }} / 100 points
+            </div>
+        </article>
+        <div class="subtitle">
+            This assignment can no longer be submitted.
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="is-hidden has-background-warning-light" id="output-container">
+    <div class="block p-4">
+        <div class="subtitle">
+            Output
+        </div>
+        <pre id="output" class="block"></pre>
+        <pre id="error" class="block is-hidden has-background-danger-light"></pre>
+        <article class="message block">
+            <div id="score" class="message-body">
+            </div>
+        </article>
+    </div>
+</div>
+{% endif %}
+
+
+<script>
+    let output = document.getElementById("output");
+    let error = document.getElementById("error");
+    let score = document.getElementById("score");
+    let output_container = document.getElementById("output-container");
+    let submit = document.getElementById("submit");
+    let editor = ace.edit("editor", {
+        "mode": "ace/mode/python",
+        "tabSize": 4,
+        "useSoftTabs": true,
+        "showPrintMargin": false,
+        {% if not assignment.open %}
+        "readOnly": true,
+        {% endif %}
+    });
+    
+    submit.onclick = function() {
+        submit.classList.add("is-loading");
+        output_container.classList.add("is-hidden");
+        fetch("/submit/{{ assignment.id }}", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            body: editor.getValue(),
+        }).then((response) => {
+            return response.json();
+        }).then((response_json) => {
+            output_container.classList = ["has-background-warning-light"];
+            output.textContent = response_json.output;
+            error.textContent = response_json.error;
+            error.classList.toggle("is-hidden", response_json.error === "");
+            output.classList.toggle("is-hidden", response_json.output === "");
+            score.parentNode.classList.toggle("is-success", response_json.score >= 100);
+            score.parentNode.classList.toggle("is-danger", response_json.score < 100);
+            score.innerText = `Score: ${response_json.score}%`
+        }).catch((error_message) => {
+            output_container.classList = ["has-background-danger-light"];
+            console.log("here")
+            error.textContent = `Internal server error (please let the instructor know about this!)`;
+            error.classList.remove("is-hidden");
+            output.classList.add("is-hidden");
+            score.parentNode.classList.add("is-hidden");
+        }).finally(() => {
+            submit.classList.remove("is-loading");
+        });
+    }
+</script>
+{% endblock %}
+    
