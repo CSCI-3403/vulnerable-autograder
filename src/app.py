@@ -22,21 +22,30 @@ from lib.vuln_db import VulnDB
 
 GRADING_TEMPLATE = Path("lib", "template.py").read_text()
 View = Union[Response, str, Tuple[str, int]]
-assignment_cache: List[Assignment] = []
 
 # Init logging
 log = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-# Init app
+
 app = Flask(__name__)
 app.secret_key = "test"
+
 bcrypt = Bcrypt(app)
 
-# Init login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
+
+app.config.update(
+    SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    SQLALCHEMY_DATABASE_URI="sqlite:///grading.sqlite3",
+    student_root="/home",
+)
+
+db.init_app(app)
+with app.app_context():
+    init_database()
 
 @login_manager.user_loader
 def load_user(username):
@@ -62,7 +71,8 @@ def init_user_account(user: str):
         path.mkdir(parents=True, exist_ok=True)
         log.info(f"Created user directory at {path.resolve()}")
     else:
-        raise NotImplementedError("Still need to make the sandbox user script")
+        log.info(f"Creating user: {user}")
+        os.system(f"sudo ./create_user.sh {user}")
 
     get_insecure_db(user).init()
 
@@ -233,36 +243,18 @@ def admin_student(student_id: str) -> View:
     student = db.session.query(Student).filter(Student.username==student_id).first()
     return render_template('admin_student.html', student=student, grades=grades, average=average)
 
-def serve(port: int, debug: bool, root: str) -> None:
-    app.config["student_root"] = root
-
-    log.info(f"Running on localhost:{port} (file root: {root})")
-    app.run("0.0.0.0", debug=debug, port=port)
-
 @click.command()
 @click.option("--debug", is_flag=True)
 @click.option("--port", type=int, default=80)
 @click.option("--grading-db", type=str, default="sqlite://")
-@click.option("--root", type=str)
-def main(debug: bool, port: int, grading_db: str, root: Optional[str]) -> None:
+@click.option("--root", type=str, default="/home")
+def main(debug: bool, port: int, grading_db: str, root: str) -> None:
     app.config.update(
-        SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        SQLALCHEMY_DATABASE_URI=grading_db
+        SQLALCHEMY_DATABASE_URI=grading_db,
+        student_root=root,
     )
-
-    db.init_app(app)
-    with app.app_context():
-        init_database()
-
-    if debug and not root:
-        log.info("No root directory specified while debugging: Using temporary directory")
-        with TemporaryDirectory() as dir:
-            serve(port, debug, dir)
-    else:
-        if root is None:
-            log.info("No root directory specified: Using /home")
-            root = "/home"
-        serve(port, debug, root)
+    
+    serve(port, debug, root)
 
 if __name__ == "__main__":
     main()
