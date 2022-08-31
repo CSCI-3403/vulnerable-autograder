@@ -125,8 +125,12 @@ def grades():
 @login_required
 def assignment(assignment_id: int):
     assignment = db.session.query(Assignment).filter(Assignment.id==assignment_id).first()
+    submission = (db.session.query(Submission)
+        .filter(Submission.student_id==current_user.username)
+        .order_by(Submission.time.desc())
+        .first())
     score = get_insecure_db(current_user.username).read_grade(assignment_id)
-    return render_template("assignment.html", assignment=assignment, score=score)
+    return render_template("assignment.html", assignment=assignment, submisson=submission, score=score)
 
 @app.route("/submit/<assignment_id>", methods=["POST"])
 @login_required

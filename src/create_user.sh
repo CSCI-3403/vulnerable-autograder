@@ -21,6 +21,7 @@ INSERT INTO grades VALUES
     ('Bob', 4, 80);
 EOF
 
+sudo usermod -a -G "students" "$1"
 chgrp "$1" "/home/$1/database.sqlite3" 
 chown "$1" "/home/$1/database.sqlite3" 
 chmod g+rwx "/home/$1"

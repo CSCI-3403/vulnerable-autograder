@@ -16,7 +16,11 @@
         {{ assignment.description }}
     </div>
     <div class="block">
+        {% if submission %}
         <div id="editor">{{ assignment.starting_code }}</div>
+        {% else %}
+        <div id="editor">{{ submission.code }}</div>
+        {% endif %}
     </div>
     <div class="level">
         {% if assignment.open %}
