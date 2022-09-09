@@ -73,7 +73,8 @@ def run_as_user(path: Path, user: str):
         import pwd
 
         pw_record = pwd.getpwnam(user)
-        preexec_fn = demote_process(pw_record.pw_gid, pw_record.pw_uid)
+        sgid = os.getgrouplist(user, pw_record.pw_gid)
+        preexec_fn = demote_process(pw_record.pw_gid, pw_record.pw_uid, sgid)
 
         env = os.environ.copy()
         env.update({
@@ -93,18 +94,25 @@ def run_as_user(path: Path, user: str):
         )
 
     try:
-        result.wait(timeout=2)
+        output, error = result.communicate(timeout=2)
     except:
-        pass
+        log.exception("Exception waiting for communication")
+        result.kill()
+        output = b''
+        error = b'Program timed out'
 
-    output = result.stdout.read().decode() # type: ignore
-    error = result.stderr.read().decode() # type: ignore
+    # output = result.stdout.read().decode() # type: ignore
+    # error = result.stderr.read().decode() # type: ignore
 
-    return output, error
+    try:
+        return output.decode(), error.decode()
+    except:
+        return '', 'Unable to decode output'
 
-def demote_process(uid: int, gid: int):
+def demote_process(uid: int, gid: int, sgids: List[int]):
     def ret():
         os.setgid(gid)
+        os.setgroups(sgids)
         os.setuid(uid)
     return ret
 
@@ -127,14 +135,19 @@ def assignment(assignment_id: int):
     assignment = db.session.query(Assignment).filter(Assignment.id==assignment_id).first()
     submission = (db.session.query(Submission)
         .filter(Submission.student_id==current_user.username)
-        .order_by(Submission.time.desc())
+        .filter(Submission.assignment_id==assignment_id)
+        .order_by(Submission.id.desc())
         .first())
     score = get_insecure_db(current_user.username).read_grade(assignment_id)
-    return render_template("assignment.html", assignment=assignment, submisson=submission, score=score)
+    return render_template("assignment.html", assignment=assignment, submission=submission, score=score)
 
 @app.route("/submit/<assignment_id>", methods=["POST"])
 @login_required
 def submit(assignment_id: int):
+    assignment = db.session.query(Assignment).filter(Assignment.id==assignment_id).first()
+    if not assignment.open:
+        abort(403)
+
     code = request.data.decode()
 
     try:
